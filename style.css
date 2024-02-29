@@ -1,0 +1,33 @@
+body {
+    background-image: url("img/background.jpg");
+}
+
+a {
+    color: #FFFFFF;
+}
+
+.bar {
+    border-style: solid;
+    background-color: #737373;
+    border-color: #737373;
+    color: #FFFFFF;
+}
+
+.nobreak {
+    display: inline;
+}
+
+.content {
+    text-align: center;
+    margin: auto;
+    color: #FFFFFF;
+    border-style: solid;
+    border-radius: 8px;
+    border-color: #737373;
+    background-color: #828282;
+    width: 500px;
+}
+
+.left {
+    text-align: left;
+}
