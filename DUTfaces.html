@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WY-30 ASCII Face Sequencer</title>
+
+  <style>
+    body {
+      background: black;
+      color: #33ff66;
+      font-family: monospace;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-top: 0;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+    }
+
+    .panel {
+      border: 1px solid #116622;
+      background: #050505;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    button,
+    input {
+      background: black;
+      color: #33ff66;
+      border: 1px solid #116622;
+      padding: 8px 12px;
+      font-family: monospace;
+      border-radius: 6px;
+    }
+
+    button:hover {
+      background: #0d1a0d;
+      cursor: pointer;
+    }
+
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(40, 14px);
+      gap: 1px;
+      background: #113311;
+      padding: 8px;
+      border-radius: 10px;
+      width: fit-content;
+    }
+
+    .cell {
+      width: 14px;
+      height: 14px;
+      background: black;
+      color: #33ff66;
+      border: none;
+      font-size: 10px;
+      padding: 0;
+      line-height: 14px;
+      text-align: center;
+    }
+
+    .cell:hover {
+      background: #0f2a0f;
+    }
+
+    textarea {
+      width: 100%;
+      height: 400px;
+      background: black;
+      color: #33ff66;
+      border: 1px solid #116622;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    .step {
+      border: 1px solid #116622;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+    }
+
+    .active {
+      background: #0f2a0f;
+      border-color: #33ff66;
+    }
+
+    .subtitle {
+      color: #66cc88;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h1>WY-30 ASCII Face Sequencer</h1>
+
+  <div class="subtitle">
+    Draw terminal faces frame-by-frame for your Palm Pilot + Wyse WY-30 setup.
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div id="stepTitle"></div>
+      <div id="stepDescription" class="subtitle"></div>
+
+      <div class="toolbar">
+        <input id="drawChar" maxlength="1" value="#" />
+
+        <button onclick="prevStep()">Previous</button>
+        <button onclick="nextStep()">Next</button>
+        <button onclick="clearFrame()">Clear</button>
+        <button onclick="copyPrevious()">Copy Previous</button>
+      </div>
+
+      <div id="grid"></div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h3>Face Sequence</h3>
+        <div id="timeline"></div>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <h3>ASCII Export</h3>
+        <textarea id="asciiExport" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WIDTH = 40;
+    const HEIGHT = 20;
+
+    const steps = [
+      {
+        title: "Happy Face",
+        description: "Draw the base happy expression."
+      },
+      {
+        title: "Happy Talking",
+        description: "Edit the mouth into an open speaking frame."
+      },
+      {
+        title: "Sad Face",
+        description: "Draw a sad expression."
+      },
+      {
+        title: "Sad Talking",
+        description: "Make the sad face talk."
+      },
+      {
+        title: "Straight Face",
+        description: "Create a neutral expression."
+      },
+      {
+        title: "Straight Talking",
+        description: "Neutral expression with open mouth."
+      },
+      {
+        title: "Looking Sideways",
+        description: "Eyes looking to the side."
+      },
+      {
+        title: "Eyes Closed",
+        description: "Closed-eye blinking or sleeping frame."
+      }
+    ];
+
+    let currentStep = 0;
+
+    function emptyGrid() {
+      return Array.from({ length: HEIGHT }, () =>
+        Array.from({ length: WIDTH }, () => " ")
+      );
+    }
+
+    let frames = steps.map(() => emptyGrid());
+
+    const gridElement = document.getElementById("grid");
+    const exportElement = document.getElementById("asciiExport");
+    const timelineElement = document.getElementById("timeline");
+
+    function renderGrid() {
+      gridElement.innerHTML = "";
+
+      const grid = frames[currentStep];
+
+      for (let y = 0; y < HEIGHT; y++) {
+        for (let x = 0; x < WIDTH; x++) {
+          const button = document.createElement("button");
+
+          button.className = "cell";
+          button.textContent = grid[y][x];
+
+          button.onclick = () => {
+            const drawChar = document.getElementById("drawChar").value || "#";
+
+            grid[y][x] = grid[y][x] === " " ? drawChar[0] : " ";
+
+            renderGrid();
+            updateExport();
+          };
+
+          gridElement.appendChild(button);
+        }
+      }
+
+      document.getElementById("stepTitle").innerHTML = `
+        <h2>Step ${currentStep + 1}: ${steps[currentStep].title}</h2>
+      `;
+
+      document.getElementById("stepDescription").textContent =
+        steps[currentStep].description;
+
+      renderTimeline();
+    }
+
+    function renderTimeline() {
+      timelineElement.innerHTML = "";
+
+      steps.forEach((step, index) => {
+        const div = document.createElement("div");
+
+        div.className = "step" + (index === currentStep ? " active" : "");
+
+        div.innerHTML = `
+          <strong>${index + 1}. ${step.title}</strong><br>
+          <span>${step.description}</span>
+        `;
+
+        timelineElement.appendChild(div);
+      });
+    }
+
+    function updateExport() {
+      const output = frames
+        .map((frame, index) => {
+          const text = frame.map(row => row.join("")).join("\n");
+
+          return `=== ${steps[index].title} ===\n${text}`;
+        })
+        .join("\n\n");
+
+      exportElement.value = output;
+    }
+
+    function nextStep() {
+      if (currentStep < steps.length - 1) {
+        currentStep++;
+        renderGrid();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 0) {
+        currentStep--;
+        renderGrid();
+      }
+    }
+
+    function clearFrame() {
+      frames[currentStep] = emptyGrid();
+      renderGrid();
+      updateExport();
+    }
+
+    function copyPrevious() {
+      if (currentStep === 0) return;
+
+      frames[currentStep] = frames[currentStep - 1]
+        .map(row => [...row]);
+
+      renderGrid();
+      updateExport();
+    }
+
+    renderGrid();
+    updateExport();
+  </script>
+</body>
+</html>
